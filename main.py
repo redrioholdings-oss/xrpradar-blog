@@ -25,7 +25,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "webp"}
 PORTAL_ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "webp", "pdf"}
 
-APP_VERSION = "v56"
+APP_VERSION = "v57"
 LAST_UPDATED_DATE = "August 5, 2026"
 LAST_UPDATED_TIME_UTC = "3:25 PM UTC"
 LAST_UPDATED_TIME_CT = "10:25 AM CST"
@@ -11114,6 +11114,7 @@ def sidebar_html():
         <li class="sb-cat-count">No posts yet.</li>
         {% endfor %}
       </ul>
+      <a class="sb-view-all" href="{{ url_for('archive') }}">View Archive &rarr;</a>
     </div>
   </div>
   <div class="sb-panel">
@@ -11229,6 +11230,48 @@ INDEX_TEMPLATE = """
       {% endif %}
     {% else %}
       <p class="meta">No posts found.</p>
+    {% endif %}
+  </main>
+</div>
+</div>
+""" + FOOTER_BLOCK + """
+</body></html>
+"""
+
+HOME_TEMPLATE = """
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XRP Complete Blog</title><style>""" + BASE_CSS + """
+.cur-media { width: 100%; aspect-ratio: 16 / 9; background: #05070c; position: relative;
+  overflow: hidden; border: 1px solid var(--line); margin-bottom: 26px; }
+.cur-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cur-media.empty { display: flex; align-items: center; justify-content: center; color: var(--muted);
+  font-family: var(--mn); font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+</style></head><body>
+<div class="shell">
+""" + HEADER_BLOCK + """
+<div class="layout">
+""" + sidebar_html() + """
+  <main class="content">
+    {% if post %}
+    <div class="section-head">
+      <span class="section-title">Current Briefing</span>
+      <a class="section-link" href="{{ url_for('archive') }}">View Archive &rarr;</a>
+    </div>
+    {% if post['thumb'] %}
+    <div class="cur-media"><img src="{{ url_for('uploaded_file', filename=post['thumb']) }}" alt=""></div>
+    {% else %}
+    <div class="cur-media empty">No image</div>
+    {% endif %}
+    <div class="article-head">
+      <div class="category-tag">{{ post['category'] }}</div>
+      <h1>{{ post['title'] }}</h1>
+      <div class="meta">{{ post['created_at'] }} &middot; {{ post['read_min'] }} min read</div>
+      <div class="article-rule"></div>
+    </div>
+    <div class="post-content">{{ rendered_content|safe }}</div>
+    {% else %}
+    <p class="meta">No posts found.</p>
     {% endif %}
   </main>
 </div>
@@ -11536,11 +11579,26 @@ def info_page():
 def index():
     db = get_db()
     visitor_count = bump_visitor_count(db)
+    latest = attach_thumbnails(db, db.execute(
+        "SELECT * FROM posts WHERE published = 1 ORDER BY id DESC LIMIT 1").fetchall())
+    post = latest[0] if latest else None
+    rendered = render_content(post["content"]) if post else ""
+    recent_posts, categories = sidebar_context(db)
+    return render_template_string(
+        HOME_TEMPLATE, post=post, rendered_content=rendered,
+        recent_posts=recent_posts, categories=categories, **footer_ctx(db, visitor_count)
+    )
+
+
+@app.route("/archive")
+def archive():
+    db = get_db()
+    visitor_count = bump_visitor_count(db)
     posts = attach_thumbnails(db, db.execute("SELECT * FROM posts WHERE published = 1 ORDER BY id DESC").fetchall())
     recent_posts, categories = sidebar_context(db)
     return render_template_string(
-        INDEX_TEMPLATE, posts=posts, heading="XRP Complete Blog",
-        subheading="", featured_layout=True,
+        INDEX_TEMPLATE, posts=posts, heading="Briefing Archive",
+        subheading="Every published briefing, newest first.", featured_layout=False,
         recent_posts=recent_posts, categories=categories, **footer_ctx(db, visitor_count)
     )
 
