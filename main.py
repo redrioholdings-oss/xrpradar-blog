@@ -25,10 +25,10 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "webp"}
 PORTAL_ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "webp", "pdf"}
 
-APP_VERSION = "v55"
+APP_VERSION = "v56"
 LAST_UPDATED_DATE = "August 5, 2026"
-LAST_UPDATED_TIME_UTC = "5:10 PM UTC"
-LAST_UPDATED_TIME_CT = "12:10 PM CST"
+LAST_UPDATED_TIME_UTC = "3:25 PM UTC"
+LAST_UPDATED_TIME_CT = "10:25 AM CST"
 
 # v48 display + timing constants -----------------------------------------
 # Shown in the intel strip, trust strip, and Network Status sidebar panel.
@@ -11042,7 +11042,7 @@ HEADER_BLOCK = '''
       </span>
     </div>
     <div class="cta-row">
-      <a class="cta-primary" href="#briefings">Latest Briefing &rarr;</a>
+      <a class="cta-primary" href="/#briefings">Latest Briefing &rarr;</a>
     </div>
   </div>
   <div class="hdr-right">
