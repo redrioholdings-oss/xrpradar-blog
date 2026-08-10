@@ -25,7 +25,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "webp"}
 PORTAL_ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "webp", "pdf"}
 
-APP_VERSION = "v57"
+APP_VERSION = "v59"
 LAST_UPDATED_DATE = "August 5, 2026"
 LAST_UPDATED_TIME_UTC = "3:25 PM UTC"
 LAST_UPDATED_TIME_CT = "10:25 AM CST"
@@ -11000,7 +11000,7 @@ HEADER_BLOCK = '''
   </a>
   <div class="nav-links">
     <a class="nl-active" href="/">Home</a>
-    <a href="/#briefings">Briefings</a>
+    <a href="/briefings">Briefings</a>
     <a href="/category/Legislation">Legislation</a>
     <a href="/about">About</a>
   </div>
@@ -11254,8 +11254,7 @@ HOME_TEMPLATE = """
 """ + sidebar_html() + """
   <main class="content">
     {% if post %}
-    <div class="section-head">
-      <span class="section-title">Current Briefing</span>
+    <div class="section-head" style="justify-content:flex-end;">
       <a class="section-link" href="{{ url_for('archive') }}">View Archive &rarr;</a>
     </div>
     {% if post['thumb'] %}
@@ -11586,6 +11585,28 @@ def index():
     recent_posts, categories = sidebar_context(db)
     return render_template_string(
         HOME_TEMPLATE, post=post, rendered_content=rendered,
+        recent_posts=recent_posts, categories=categories, **footer_ctx(db, visitor_count)
+    )
+
+
+@app.route("/briefings")
+def briefings():
+    db = get_db()
+    visitor_count = bump_visitor_count(db)
+    all_posts = attach_thumbnails(db, db.execute(
+        "SELECT * FROM posts WHERE published = 1 ORDER BY id DESC").fetchall())
+    # V59: Briefings = titles containing "Brief" plus a number, or Proprietary
+    # briefings. Other stories are not briefings and stay out of this page.
+    def is_briefing(p):
+        t = (p.get("title") or "")
+        tl = t.lower()
+        return ("brief" in tl) and (bool(re.search(r"\d", t)) or "proprietary" in tl)
+    posts = [p for p in all_posts if is_briefing(p)]
+    recent_posts, categories = sidebar_context(db)
+    return render_template_string(
+        INDEX_TEMPLATE, posts=posts, heading="Briefings",
+        subheading="Numbered XRP briefings and Proprietary Briefings, newest first.",
+        featured_layout=False,
         recent_posts=recent_posts, categories=categories, **footer_ctx(db, visitor_count)
     )
 
