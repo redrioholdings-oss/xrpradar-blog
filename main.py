@@ -25,7 +25,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "webp"}
 PORTAL_ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "webp", "pdf"}
 
-APP_VERSION = "v59"
+APP_VERSION = "v60"
 LAST_UPDATED_DATE = "August 5, 2026"
 LAST_UPDATED_TIME_UTC = "3:25 PM UTC"
 LAST_UPDATED_TIME_CT = "10:25 AM CST"
@@ -10999,10 +10999,10 @@ HEADER_BLOCK = '''
     </span>
   </a>
   <div class="nav-links">
-    <a class="nl-active" href="/">Home</a>
-    <a href="/briefings">Briefings</a>
-    <a href="/category/Legislation">Legislation</a>
-    <a href="/about">About</a>
+    <a class="{{ 'nl-active' if nav_page == 'home' else '' }}" href="/">Home</a>
+    <a class="{{ 'nl-active' if nav_page == 'briefings' else '' }}" href="/briefings">Briefings</a>
+    <a class="{{ 'nl-active' if nav_page == 'legislation' else '' }}" href="/category/Legislation">Legislation</a>
+    <a class="{{ 'nl-active' if nav_page == 'about' else '' }}" href="/about">About</a>
   </div>
   <form class="nav-search-form" method="get" action="/search">
     <input type="text" name="q" placeholder="Search" aria-label="Search briefings">
@@ -11566,7 +11566,8 @@ def info_page():
     page_title, eyebrow, body = INFO_PAGES[key]
     db = get_db()
     return render_template_string(
-        INFO_TEMPLATE, page_title=page_title, eyebrow=eyebrow, body=body, **footer_ctx(db)
+        INFO_TEMPLATE, page_title=page_title, eyebrow=eyebrow, body=body,
+        nav_page="about" if key == "about" else None, **footer_ctx(db)
     )
 
 
@@ -11584,7 +11585,7 @@ def index():
     rendered = render_content(post["content"]) if post else ""
     recent_posts, categories = sidebar_context(db)
     return render_template_string(
-        HOME_TEMPLATE, post=post, rendered_content=rendered,
+        HOME_TEMPLATE, post=post, rendered_content=rendered, nav_page="home",
         recent_posts=recent_posts, categories=categories, **footer_ctx(db, visitor_count)
     )
 
@@ -11604,7 +11605,7 @@ def briefings():
     posts = [p for p in all_posts if is_briefing(p)]
     recent_posts, categories = sidebar_context(db)
     return render_template_string(
-        INDEX_TEMPLATE, posts=posts, heading="Briefings",
+        INDEX_TEMPLATE, posts=posts, heading="Briefings", nav_page="briefings",
         subheading="Numbered XRP briefings and Proprietary Briefings, newest first.",
         featured_layout=False,
         recent_posts=recent_posts, categories=categories, **footer_ctx(db, visitor_count)
@@ -11626,6 +11627,7 @@ def archive():
 
 @app.route("/category/<category>")
 def by_category(category):
+    _nav_page = "legislation" if category.lower() == "legislation" else None
     db = get_db()
     visitor_count = bump_visitor_count(db)
     posts = attach_thumbnails(db, db.execute(
@@ -11633,7 +11635,7 @@ def by_category(category):
     ).fetchall())
     recent_posts, categories = sidebar_context(db)
     return render_template_string(
-        INDEX_TEMPLATE, posts=posts, heading=f"Category: {category}",
+        INDEX_TEMPLATE, posts=posts, heading=f"Category: {category}", nav_page=_nav_page,
         subheading=f"{len(posts)} post(s) in {category}.",
         recent_posts=recent_posts, categories=categories, **footer_ctx(db, visitor_count)
     )
